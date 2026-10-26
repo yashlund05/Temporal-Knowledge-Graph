@@ -1,0 +1,32 @@
+{
+  "total": 20050,
+  "correct_detections": 20004,
+  "false_positives": 0,
+  "false_negatives": 46,
+  "by_type": {
+    "none": {
+      "total": 5000,
+      "correct": 5000
+    },
+    "timestamp": {
+      "total": 5000,
+      "correct": 4987
+    },
+    "entity": {
+      "total": 5000,
+      "correct": 4982
+    },
+    "relation": {
+      "total": 5000,
+      "correct": 4985
+    },
+    "ordering": {
+      "total": 50,
+      "correct": 50
+    }
+  },
+  "accuracy": 0.9977057356608479,
+  "precision": 1.0,
+  "recall": 0.9969435215946844,
+  "f1": 0.998469421707593
+}
