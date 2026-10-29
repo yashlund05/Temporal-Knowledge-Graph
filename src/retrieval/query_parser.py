@@ -75,7 +75,11 @@ class QueryParser:
     expression extraction to produce a structured parse of a temporal question.
     """
 
-    def __init__(self, known_entities: list[str] | None = None) -> None:
+    def __init__(
+        self,
+        known_entities: list[str] | None = None,
+        entity_names: list[str] | None = None,
+    ) -> None:
         """Initialise the query parser.
 
         Args:
@@ -83,8 +87,11 @@ class QueryParser:
                 If provided, extracted entity strings will be matched
                 against this list using exact, case-insensitive, and
                 substring containment strategies.
+            entity_names: Alias for known_entities.
         """
-        self.known_entities: list[str] = known_entities or []
+        self.known_entities: list[str] = (
+            known_entities if known_entities is not None else (entity_names or [])
+        )
         self._known_lower: dict[str, str] = {
             e.lower(): e for e in self.known_entities
         }
@@ -185,15 +192,23 @@ class QueryParser:
 
         # Relative expressions
         for match in _BEFORE_RE.finditer(question):
+            if "before" not in relative:
+                relative.append("before")
             relative.append(f"before {match.group(1).strip()}")
 
         for match in _AFTER_RE.finditer(question):
+            if "after" not in relative:
+                relative.append("after")
             relative.append(f"after {match.group(1).strip()}")
 
         for match in _DURING_RE.finditer(question):
+            if "during" not in relative:
+                relative.append("during")
             relative.append(f"during {match.group(1).strip()}")
 
         for match in _BETWEEN_RE.finditer(question):
+            if "between" not in relative:
+                relative.append("between")
             relative.append(
                 f"between {match.group(1).strip()} and {match.group(2).strip()}"
             )

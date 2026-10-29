@@ -15,6 +15,7 @@ from typing import Any
 from tqdm import tqdm
 
 from src.verification.verification_result import (
+    TemporalClaim,
     VerificationResult,
     VerificationStatus,
 )
@@ -219,16 +220,35 @@ class TemporalVerificationPipeline:
         from src.reasoning.claim_extractor import ClaimExtractor
         from src.verification.temporal_verifier import TemporalVerifier
         from src.hallucination.detector import HallucinationDetector
-        from src.explanation.explanation_generator import ExplanationGenerator
+        from src.explanation.explainer import ExplanationGenerator
 
         logger.info("Building pipeline from configuration...")
 
         # 1. Knowledge graph store.
-        graph_store = TemporalKGStore(
-            uri=settings.NEO4J_URI,
-            user=settings.NEO4J_USER,
-            password=settings.NEO4J_PASSWORD,
-        )
+        if getattr(settings, "GRAPH_BACKEND", "memory") == "memory":
+            from src.knowledge_graph.memory_store import InMemoryKGStore
+            graph_store = InMemoryKGStore()
+            cached_path = settings.PROCESSED_DATA_DIR / "knowledge_graph.json"
+            if cached_path.exists():
+                logger.info("Loading cached graph from %s...", cached_path)
+                graph_store.load(cached_path)
+            else:
+                logger.warning("Cached graph not found at %s.", cached_path)
+        else:
+            try:
+                graph_store = TemporalKGStore(
+                    uri=settings.NEO4J_URI,
+                    user=settings.NEO4J_USER,
+                    password=settings.NEO4J_PASSWORD,
+                )
+            except Exception as exc:
+                logger.warning("Failed to connect to Neo4j (%s); falling back to InMemoryKGStore.", exc)
+                from src.knowledge_graph.memory_store import InMemoryKGStore
+                graph_store = InMemoryKGStore()
+                cached_path = settings.PROCESSED_DATA_DIR / "knowledge_graph.json"
+                if cached_path.exists():
+                    logger.info("Loading cached graph from %s...", cached_path)
+                    graph_store.load(cached_path)
 
         # 2. Query parser -- load known entity names from the graph so
         #    the parser can perform entity linking.
@@ -252,8 +272,7 @@ class TemporalVerificationPipeline:
 
         # 5. Claim extractor.
         claim_extractor = ClaimExtractor(
-            base_url=settings.OLLAMA_BASE_URL,
-            model=settings.OLLAMA_MODEL,
+            llm_reasoner=reasoner,
         )
 
         # 6. Temporal verifier.
@@ -267,10 +286,7 @@ class TemporalVerificationPipeline:
         detector = HallucinationDetector()
 
         # 8. Explanation generator.
-        explainer = ExplanationGenerator(
-            base_url=settings.OLLAMA_BASE_URL,
-            model=settings.OLLAMA_MODEL,
-        )
+        explainer = ExplanationGenerator()
 
         logger.info("Pipeline built successfully.")
 
@@ -339,7 +355,23 @@ class TemporalVerificationPipeline:
         list
             Extracted ``TemporalClaim`` objects.
         """
-        return self.claim_extractor.extract(answer)
+        raw_claims = self.claim_extractor.extract(answer)
+        claims: list[TemporalClaim] = []
+        for c in raw_claims:
+            if isinstance(c, dict):
+                claims.append(
+                    TemporalClaim(
+                        subject=str(c.get("subject", "")),
+                        predicate=str(c.get("predicate", "")),
+                        object=str(c.get("object", "")),
+                        timestamp=str(c.get("timestamp", "")),
+                        source_sentence=str(c.get("source_sentence", "")),
+                        extraction_method=str(c.get("extraction_method", "rule_based")),
+                    )
+                )
+            else:
+                claims.append(c)
+        return claims
 
     def _verify_claims(
         self, claims: list[Any]

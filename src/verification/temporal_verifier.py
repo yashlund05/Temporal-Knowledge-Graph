@@ -75,15 +75,27 @@ class TemporalVerifier:
         knowledge graph.
     """
 
-    def __init__(self, graph_store: Any) -> None:
+    def __init__(
+        self,
+        graph_store: Any,
+        timestamp_tolerance_days: int = TIMESTAMP_TOLERANCE_DAYS,
+        partial_support_threshold: float = 0.5,
+    ) -> None:
         """Initialise the verifier with a knowledge-graph store.
 
         Parameters
         ----------
         graph_store : TemporalKGStore
             The backing graph store.
+        timestamp_tolerance_days : int
+            Tolerance in days for timestamp matching.
+        partial_support_threshold : float
+            Confidence threshold for partial support.
         """
         self._store = graph_store
+        self.timestamp_tolerance_days = timestamp_tolerance_days
+        self.partial_support_threshold = partial_support_threshold
+
 
     # ------------------------------------------------------------------
     # Stage 1: Entity verification
@@ -332,6 +344,17 @@ class TemporalVerifier:
         VerificationResult
             A fully populated verification result.
         """
+        if isinstance(claim, dict):
+            from src.verification.verification_result import TemporalClaim
+            claim = TemporalClaim(
+                subject=str(claim.get("subject", "")),
+                predicate=str(claim.get("predicate", "")),
+                object=str(claim.get("object", "")),
+                timestamp=str(claim.get("timestamp", "")),
+                source_sentence=str(claim.get("source_sentence", "")),
+                extraction_method=str(claim.get("extraction_method", "rule_based")),
+            )
+
         checks: dict[str, Any] = {}
 
         # Stage 1 -- entity
@@ -403,6 +426,8 @@ class TemporalVerifier:
             explanation=explanation,
             checks=checks,
         )
+
+    verify = verify_claim
 
     def verify_claims(
         self, claims: list[TemporalClaim]

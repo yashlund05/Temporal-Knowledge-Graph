@@ -17,6 +17,18 @@ import networkx as nx
 logger = logging.getLogger(__name__)
 
 
+def _normalize_iso_date(d: str | None, is_end: bool = False) -> str:
+    """Normalize a date or year string into an ISO YYYY-MM-DD boundary string."""
+    if not d or d.startswith("#"):
+        return "9999-12-31" if is_end else "0000-01-01"
+    d = str(d).strip()
+    if len(d) == 4 and d.isdigit():
+        return f"{d}-12-31" if is_end else f"{d}-01-01"
+    if len(d) == 7 and d[:4].isdigit() and d[4] == "-":
+        return f"{d}-31" if is_end else f"{d}-01"
+    return d
+
+
 class InMemoryKGStore:
     """
     In-memory temporal knowledge graph using NetworkX.
@@ -30,6 +42,7 @@ class InMemoryKGStore:
         self._entities: dict[str, dict] = {}  # entity_id -> {name, ...}
         self._events: dict[str, dict] = {}    # event_id -> {predicate, timestamp, ...}
         self._entity_name_index: dict[str, str] = {}  # lower(name) -> entity_id
+        self._subj_obj_events: dict[tuple[str, str], list[dict]] = {}  # (subj_id, obj_id) -> list of events
 
     # ------------------------------------------------------------------
     # Data loading
@@ -48,9 +61,13 @@ class InMemoryKGStore:
         object_id: str,
         timestamp: str,
         source: str = "icews14",
+        start_time: str | None = None,
+        end_time: str | None = None,
     ) -> str:
         """Add a temporal event (fact) linking subject -> event -> object."""
         event_id = str(uuid.uuid4())[:12]
+        st = start_time or timestamp
+        et = end_time or timestamp
         event_data = {
             "event_id": event_id,
             "predicate": predicate,
@@ -58,8 +75,11 @@ class InMemoryKGStore:
             "source": source,
             "subject_id": subject_id,
             "object_id": object_id,
+            "start_time": st,
+            "end_time": et,
         }
         self._events[event_id] = event_data
+        self._subj_obj_events.setdefault((subject_id, object_id), []).append(event_data)
 
         event_node = f"event:{event_id}"
         subj_node = f"entity:{subject_id}"
@@ -84,12 +104,17 @@ class InMemoryKGStore:
         """Load a batch of facts. Each fact: {subject_id, predicate, object_id, timestamp}."""
         count = 0
         for fact in facts:
+            ts = fact.get("timestamp") or fact.get("start_time") or ""
+            st = fact.get("start_time") or ts
+            et = fact.get("end_time") or ts
             self.add_event(
                 subject_id=str(fact["subject_id"]),
-                predicate=fact["predicate"],
+                predicate=fact.get("predicate") or fact.get("relation", ""),
                 object_id=str(fact["object_id"]),
-                timestamp=fact["timestamp"],
+                timestamp=ts,
                 source=fact.get("source", "icews14"),
+                start_time=st,
+                end_time=et,
             )
             count += 1
         return count
@@ -164,10 +189,13 @@ class InMemoryKGStore:
     ) -> list[dict]:
         """Get events involving entity within a time range."""
         all_events = self.get_events_by_entity(entity_name, limit=9999)
+        norm_start = _normalize_iso_date(start_date, is_end=False)
+        norm_end = _normalize_iso_date(end_date, is_end=True)
         filtered = []
         for ev in all_events:
-            ts = ev.get("timestamp", "")
-            if start_date <= ts <= end_date:
+            ev_start = _normalize_iso_date(ev.get("start_time") or ev.get("timestamp", ""), is_end=False)
+            ev_end = _normalize_iso_date(ev.get("end_time") or ev.get("timestamp", ""), is_end=True)
+            if ev_start <= norm_end and ev_end >= norm_start:
                 filtered.append(ev)
         return filtered[:limit]
 
@@ -205,10 +233,14 @@ class InMemoryKGStore:
     ) -> list[dict]:
         """Get events between two entities within a time range."""
         all_events = self.get_events_between_entities(entity1_name, entity2_name, limit=9999)
-        filtered = [
-            ev for ev in all_events
-            if start_date <= ev.get("timestamp", "") <= end_date
-        ]
+        norm_start = _normalize_iso_date(start_date, is_end=False)
+        norm_end = _normalize_iso_date(end_date, is_end=True)
+        filtered = []
+        for ev in all_events:
+            ev_start = _normalize_iso_date(ev.get("start_time") or ev.get("timestamp", ""), is_end=False)
+            ev_end = _normalize_iso_date(ev.get("end_time") or ev.get("timestamp", ""), is_end=True)
+            if ev_start <= norm_end and ev_end >= norm_start:
+                filtered.append(ev)
         return filtered[:limit]
 
     def verify_fact(
@@ -243,23 +275,233 @@ class InMemoryKGStore:
         if not subj_id or not obj_id:
             return result
 
-        # Find matching events
-        for eid, edata in self._events.items():
-            if edata["subject_id"] == subj_id and edata["object_id"] == obj_id:
-                if edata["predicate"].lower() == predicate.lower():
-                    result["relation_exists"] = True
-                    result["closest_timestamps"].append(edata["timestamp"])
-                    if edata["timestamp"] == timestamp:
-                        result["timestamp_match"] = True
-                        result["exact_match"] = True
-                        result["matching_facts"].append({
-                            "subject": subject_name,
-                            "predicate": predicate,
-                            "object": object_name,
-                            "timestamp": edata["timestamp"],
-                        })
+        candidate_events = (
+            self._subj_obj_events.get((subj_id, obj_id), []) +
+            self._subj_obj_events.get((obj_id, subj_id), [])
+        )
+        norm_target_ts = _normalize_iso_date(timestamp, is_end=False)
 
+        for edata in candidate_events:
+            if edata["predicate"].lower() == predicate.lower():
+                result["relation_exists"] = True
+                result["closest_timestamps"].append(edata["timestamp"])
+                ev_start = _normalize_iso_date(edata.get("start_time") or edata["timestamp"], is_end=False)
+                ev_end = _normalize_iso_date(edata.get("end_time") or edata["timestamp"], is_end=True)
+                if edata["timestamp"] == timestamp or (ev_start <= norm_target_ts <= ev_end):
+                    result["timestamp_match"] = True
+                    result["exact_match"] = True
+                    subj_name = self._entities.get(edata["subject_id"], {}).get("name", subject_name)
+                    obj_name = self._entities.get(edata["object_id"], {}).get("name", object_name)
+                    result["matching_facts"].append({
+                        "subject": subj_name,
+                        "predicate": predicate,
+                        "object": obj_name,
+                        "timestamp": edata["timestamp"],
+                    })
+
+        result["exists"] = result["exact_match"]
         return result
+
+    def query_entity_events(
+        self,
+        entity_name: str,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        limit: int = 50,
+    ) -> list[dict[str, Any]]:
+        """Find events involving an entity (as actor or target), matching TemporalKGStore format."""
+        if not self.entity_exists(entity_name):
+            return []
+        if limit == 1 and start_date is None and end_date is None:
+            return [{"actor": entity_name, "predicate": "", "target": "", "timestamp": "", "event_id": "", "source": "memory"}]
+        events = self.get_events_by_entity(entity_name, limit=limit if not (start_date or end_date) else 500)
+        norm_start = _normalize_iso_date(start_date, is_end=False) if start_date else None
+        norm_end = _normalize_iso_date(end_date, is_end=True) if end_date else None
+        filtered = []
+        for ev in events:
+            ev_start = _normalize_iso_date(ev.get("start_time") or ev.get("timestamp", ""), is_end=False)
+            ev_end = _normalize_iso_date(ev.get("end_time") or ev.get("timestamp", ""), is_end=True)
+            if norm_start and ev_end < norm_start:
+                continue
+            if norm_end and ev_start > norm_end:
+                continue
+            filtered.append({
+                "actor": ev.get("subject", ""),
+                "predicate": ev.get("predicate", ""),
+                "target": ev.get("object", ""),
+                "timestamp": ev.get("timestamp", ""),
+                "event_id": ev.get("event_id", ""),
+                "source": ev.get("source", "memory"),
+            })
+            if len(filtered) >= limit:
+                break
+        filtered.sort(key=lambda x: x["timestamp"])
+        return filtered[:limit]
+
+    def verify_entity_relation(
+        self,
+        subject: str,
+        predicate: str,
+        obj: str,
+    ) -> dict[str, Any]:
+        """Check whether a subject-predicate-object triple exists at any timestamp."""
+        subj_id = self.get_entity_id(subject)
+        obj_id = self.get_entity_id(obj)
+        if not subj_id or not obj_id:
+            return {"exists": False, "timestamps": []}
+
+        timestamps = set()
+        candidate_events = (
+            self._subj_obj_events.get((subj_id, obj_id), []) +
+            self._subj_obj_events.get((obj_id, subj_id), [])
+        )
+        for edata in candidate_events:
+            if edata["predicate"].lower() == predicate.lower():
+                timestamps.add(edata["timestamp"])
+
+        return {"exists": len(timestamps) > 0, "timestamps": sorted(timestamps)}
+
+    def query_events_by_predicate(
+        self,
+        predicate: str,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        limit: int = 50,
+    ) -> list[dict[str, Any]]:
+        """Find events with a specific predicate."""
+        filtered = []
+        norm_start = _normalize_iso_date(start_date, is_end=False) if start_date else None
+        norm_end = _normalize_iso_date(end_date, is_end=True) if end_date else None
+        for edata in self._events.values():
+            if edata["predicate"].lower() == predicate.lower():
+                ev_start = _normalize_iso_date(edata.get("start_time") or edata.get("timestamp", ""), is_end=False)
+                ev_end = _normalize_iso_date(edata.get("end_time") or edata.get("timestamp", ""), is_end=True)
+                if norm_start and ev_end < norm_start:
+                    continue
+                if norm_end and ev_start > norm_end:
+                    continue
+                subj_name = self._entities.get(edata["subject_id"], {}).get("name", "")
+                obj_name = self._entities.get(edata["object_id"], {}).get("name", "")
+                filtered.append({
+                    "subject": subj_name,
+                    "predicate": edata["predicate"],
+                    "object": obj_name,
+                    "timestamp": edata.get("timestamp", ""),
+                    "event_id": edata.get("event_id", ""),
+                })
+        filtered.sort(key=lambda x: x["timestamp"])
+        return filtered[:limit]
+
+    def search_entities_by_name(self, name: str, limit: int = 50) -> list[dict[str, Any]]:
+        """Search events for entities whose name matches or contains 'name'."""
+        matching = self.find_entities_fuzzy(name, limit=5)
+        facts: list[dict[str, Any]] = []
+        for ent in matching:
+            evs = self.get_events_by_entity(ent["name"], limit=limit)
+            facts.extend(evs)
+        return facts[:limit]
+
+    def get_entity_events(self, entity_name: str, limit: int = 50) -> list[dict[str, Any]]:
+        """Alias for query_entity_events / get_events_by_entity matching BaselineRunner expectations."""
+        return self.get_events_by_entity(entity_name, limit=limit)
+
+    def query(
+        self, cypher: str, parameters: dict[str, Any] | None = None
+    ) -> list[dict[str, Any]]:
+        """Dispatch query according to parameters to match TemporalRetriever expectations."""
+        params = parameters or {}
+        limit = params.get("limit", 50)
+        start_date = params.get("start_date")
+        end_date = params.get("end_date")
+        ref_date = params.get("reference_date")
+
+        norm_start = _normalize_iso_date(start_date, is_end=False) if start_date else None
+        norm_end = _normalize_iso_date(end_date, is_end=True) if end_date else None
+        norm_ref = _normalize_iso_date(ref_date, is_end=False) if ref_date else None
+
+        if "entity_a" in params and "entity_b" in params:
+            raw = self.get_events_between_entities(params["entity_a"], params["entity_b"], limit=9999)
+            filtered = []
+            for ev in raw:
+                ev_start = _normalize_iso_date(ev.get("start_time") or ev.get("timestamp", ""), is_end=False)
+                ev_end = _normalize_iso_date(ev.get("end_time") or ev.get("timestamp", ""), is_end=True)
+                if norm_start and ev_end < norm_start:
+                    continue
+                if norm_end and ev_start > norm_end:
+                    continue
+                filtered.append({
+                    "subject": ev.get("subject", ""),
+                    "predicate": ev.get("predicate", ""),
+                    "object": ev.get("object", ""),
+                    "timestamp": ev.get("timestamp", ""),
+                    "event_id": ev.get("event_id", ""),
+                })
+            filtered.sort(key=lambda x: x["timestamp"])
+            return filtered[:limit]
+
+        elif "entity_name" in params:
+            ent = params["entity_name"]
+            raw = self.get_events_by_entity(ent, limit=9999)
+            filtered = []
+            is_before = "< date($reference_date)" in cypher or (ref_date and "before" in cypher.lower())
+            is_after = "> date($reference_date)" in cypher or (ref_date and "after" in cypher.lower())
+            for ev in raw:
+                ev_start = _normalize_iso_date(ev.get("start_time") or ev.get("timestamp", ""), is_end=False)
+                ev_end = _normalize_iso_date(ev.get("end_time") or ev.get("timestamp", ""), is_end=True)
+                if norm_start and ev_end < norm_start:
+                    continue
+                if norm_end and ev_start > norm_end:
+                    continue
+                if is_before and norm_ref and ev_start >= norm_ref:
+                    continue
+                if is_after and norm_ref and ev_end <= norm_ref:
+                    continue
+                filtered.append({
+                    "subject": ev.get("subject", ""),
+                    "predicate": ev.get("predicate", ""),
+                    "object": ev.get("object", ""),
+                    "timestamp": ev.get("timestamp", ""),
+                    "event_id": ev.get("event_id", ""),
+                })
+            if is_before:
+                filtered.sort(key=lambda x: x["timestamp"], reverse=True)
+            else:
+                filtered.sort(key=lambda x: x["timestamp"])
+            return filtered[:limit]
+
+        elif "predicate" in params:
+            return self.query_events_by_predicate(params["predicate"], start_date, end_date, limit)
+
+        return []
+
+    def get_entity_count(self) -> int:
+        return len(self._entities)
+
+    def get_event_count(self) -> int:
+        return len(self._events)
+
+    def get_all_predicates(self) -> list[str]:
+        return sorted(self.get_all_relations())
+
+    def find_temporal_neighbours(
+        self,
+        entity: str,
+        timestamp: str,
+        window_days: int = 30,
+        limit: int = 20,
+    ) -> list[dict[str, Any]]:
+        """Find events involving entity within window_days of timestamp."""
+        try:
+            from datetime import datetime, timedelta
+            base_dt = datetime.strptime(timestamp[:10], "%Y-%m-%d")
+            min_dt = (base_dt - timedelta(days=window_days)).strftime("%Y-%m-%d")
+            max_dt = (base_dt + timedelta(days=window_days)).strftime("%Y-%m-%d")
+        except Exception:
+            min_dt = ""
+            max_dt = "9999-99-99"
+
+        events = self.query_entity_events(entity, start_date=min_dt, end_date=max_dt, limit=limit)
+        return events
 
     def get_all_entity_names(self) -> list[str]:
         """Return all entity names."""
@@ -312,6 +554,10 @@ class InMemoryKGStore:
         self._entity_name_index = {}
         for eid, edata in self._entities.items():
             self._entity_name_index[edata["name"].lower()] = eid
+
+        self._subj_obj_events = {}
+        for evid, evdata in self._events.items():
+            self._subj_obj_events.setdefault((evdata["subject_id"], evdata["object_id"]), []).append(evdata)
 
         # Rebuild NetworkX graph
         self.graph = nx.DiGraph()

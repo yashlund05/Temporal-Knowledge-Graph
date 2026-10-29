@@ -1,0 +1,437 @@
+{
+  "experiment": "cronquestions",
+  "timestamp": "2026-10-27T11:13:43.229356",
+  "sample_size": 20,
+  "comparison": {
+    "vanilla_llm": {
+      "answer_accuracy": 0.8,
+      "avg_tcs": 0.0,
+      "num_questions": 20
+    },
+    "standard_rag": {
+      "answer_accuracy": 0.0,
+      "avg_tcs": 0.0,
+      "num_questions": 20
+    },
+    "graph_rag": {
+      "answer_accuracy": 0.0,
+      "avg_tcs": 0.0,
+      "num_questions": 20
+    },
+    "tkg_verify": {
+      "answer_accuracy": 0.0,
+      "avg_tcs": 0.8,
+      "num_questions": 20
+    }
+  },
+  "detailed_results": {
+    "vanilla_llm": [
+      {
+        "question": "Who was the head of government of United States in 2012?",
+        "answer": "The head of government of the United States in 2012 was Barack Obama.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of United States in 2018?",
+        "answer": "The head of government of the United States in 2018 was President Donald Trump.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of United States in 2022?",
+        "answer": "The head of government of the United States in 2022 was Joe Biden, who served as the 46th President of the United States.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of Germany in 2015?",
+        "answer": "In 2015, the head of government of Germany was Angela Merkel, who served as Chancellor from 2005 to 2021.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of France in 2014?",
+        "answer": "The head of government of France in 2014 was Manuel Valls, who served as Prime Minister from 2014 to 2016. However, it's important to note that the head of state, President Fran\u00e7ois Hollande, was the leader of France during this period.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of France in 2019?",
+        "answer": "The head of government of France in 2019 was \u00c9douard Philippe.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of Russia in 2010?",
+        "answer": "In 2010, the head of government of Russia was Prime Minister Vladimir Putin. However, it's important to note that he was also the President of Russia at the time, as he held both positions until 2012.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of Russia in 2016?",
+        "answer": "In 2016, the head of government of Russia was Prime Minister Dmitry Medvedev. However, it's important to note that the head of state was President Vladimir Putin, who also served as the actual leader of the government.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of India in 2010?",
+        "answer": "In 2010, the head of government of India was Prime Minister Manmohan Singh.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of India in 2018?",
+        "answer": "In 2018, the head of government of India was Narendra Modi. He served as the Prime Minister of India.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of China in 2008?",
+        "answer": "In 2008, the head of government of China was Wen Jiabao, who served as the Premier of the State Council.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of China in 2016?",
+        "answer": "In 2016, the head of government of China was Li Keqiang, who served as the Premier of the People's Republic of China.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of United Kingdom in 2017?",
+        "answer": "In 2017, the head of government of the United Kingdom was Theresa May, who served as Prime Minister from July 2016 to June 2019.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of United Kingdom in 2020?",
+        "answer": "The head of government of the United Kingdom in 2020 was Boris Johnson, who served as Prime Minister from July 2019.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of United Nations in 2014?",
+        "answer": "The United Nations does not have a head of government. The United Nations is an international organization, and its highest-ranking official is the Secretary-General. In 2014, the Secretary-General was Ban Ki-moon.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of United Nations in 2019?",
+        "answer": "The United Nations does not have a head of government. The United Nations is an international organization, and its highest-ranking official is the Secretary-General. In 2019, the Secretary-General was Ant\u00f3nio Guterres.",
+        "tcs": null
+      },
+      {
+        "question": "Who served as head of government of United States before Donald Trump?",
+        "answer": "Barack Obama served as the head of government of the United States before Donald Trump.",
+        "tcs": null
+      },
+      {
+        "question": "Who served as head of government of United States after Donald Trump?",
+        "answer": "After Donald Trump, Joe Biden served as the head of government (President) of the United States.",
+        "tcs": null
+      },
+      {
+        "question": "Who was head of government of United States when Angela Merkel was Chancellor in 2014?",
+        "answer": "Barack Obama was the head of government of the United States when Angela Merkel was Chancellor of Germany in 2014.",
+        "tcs": null
+      },
+      {
+        "question": "When did Barack Obama serve as head of government of United States?",
+        "answer": "Barack Obama served as the head of government of the United States from 2009 to 2017, specifically as the 44th President.",
+        "tcs": null
+      }
+    ],
+    "standard_rag": [
+      {
+        "question": "Who was the head of government of United States in 2012?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of the United States in 2012. The dates in the evidence are all from 2014, which is after the year in question.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of United States in 2018?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of the United States in 2018.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of United States in 2022?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of the United States in 2022.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of Germany in 2015?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of Germany in 2015.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of France in 2014?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not include any information about the head of government of France in 2014.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of France in 2019?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of France in 2019.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of Russia in 2010?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of Russia in 2010. The dates mentioned are all from 2014, which is after the year in question.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of Russia in 2016?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of Russia in 2016. The dates listed are from 2014, and there is no specific mention of the Russian head of government during that year or any other year.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of India in 2010?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of India in 2010. All the events listed are from 2014, which is after the year in question.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of India in 2018?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of India in 2018. All the events listed are from 2014, which is before the year in question.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of China in 2008?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of China in 2008. All the events listed are from 2014, which is after the year in question.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of China in 2016?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of China in 2016. The evidence only covers events from 2014 and does not provide the required information for the year 2016.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of United Kingdom in 2017?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of the United Kingdom in 2017. The dates in the evidence are all from 2014, and there is no mention of David Cameron or any other individual serving as the head of government in 2017.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of United Kingdom in 2020?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of the United Kingdom in 2020. The dates in the evidence are all from 2014, which is not relevant to the question asked.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of United Nations in 2014?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of the United Nations in 2014.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of United Nations in 2019?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of the United Nations in 2019. The dates in the evidence are from 2014, which is not relevant to the question asked.",
+        "tcs": null
+      },
+      {
+        "question": "Who served as head of government of United States before Donald Trump?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of the United States or the succession of leadership. The evidence only lists various actions and interactions of the United States government but does not provide a timeline of U.S. presidents or their terms.",
+        "tcs": null
+      },
+      {
+        "question": "Who served as head of government of United States after Donald Trump?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about who served as head of government of the United States after Donald Trump. The evidence only lists various actions taken by the United States government but does not provide a succession of heads of government.",
+        "tcs": null
+      },
+      {
+        "question": "Who was head of government of United States when Angela Merkel was Chancellor in 2014?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of the United States in 2014, nor does it mention Angela Merkel's role as Chancellor.",
+        "tcs": null
+      },
+      {
+        "question": "When did Barack Obama serve as head of government of United States?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not specify when Barack Obama served as head of government of the United States. The timestamps are related to various actions and statements made by Obama, but do not indicate the period of his presidency.",
+        "tcs": null
+      }
+    ],
+    "graph_rag": [
+      {
+        "question": "Who was the head of government of United States in 2012?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of the United States in 2012. The dates in the evidence are all from 2014, which is after the year in question.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of United States in 2018?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of the United States in 2018.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of United States in 2022?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of the United States in 2022.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of Germany in 2015?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of Germany in 2015.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of France in 2014?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not include any information about the head of government of France in 2014.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of France in 2019?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of France in 2019.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of Russia in 2010?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of Russia in 2010. The dates in the evidence are all from 2014, which is after the year in question.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of Russia in 2016?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of Russia in 2016. The dates listed are from 2014, and there is no specific mention of the Russian head of government during that year or any other year.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of India in 2010?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of India in 2010. All the events listed are from 2014, which is after the year in question.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of India in 2018?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of India in 2018. All the events listed are from 2014, which is before the year in question.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of China in 2008?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of China in 2008. All the events listed are from 2014, which is after the year in question.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of China in 2016?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of China in 2016. The evidence only covers events from 2014 and does not provide the required information for the year 2016.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of United Kingdom in 2017?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of the United Kingdom in 2017. The dates in the evidence are all from 2014, and there is no mention of David Cameron or any other individual serving as the head of government in 2017.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of United Kingdom in 2020?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of the United Kingdom in 2020. The dates in the evidence are all from 2014, which is not relevant to the question asked.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of United Nations in 2014?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of the United Nations in 2014. The evidence primarily includes statements, actions, and interactions of various countries with the United Nations but does not specify a head of government position.",
+        "tcs": null
+      },
+      {
+        "question": "Who was the head of government of United Nations in 2019?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of the United Nations in 2019. The dates in the evidence are all from 2014, which is before the year in question.",
+        "tcs": null
+      },
+      {
+        "question": "Who served as head of government of United States before Donald Trump?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of the United States before Donald Trump. The evidence consists of various actions and interactions of the United States government but does not provide a list of past heads of government.",
+        "tcs": null
+      },
+      {
+        "question": "Who served as head of government of United States after Donald Trump?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about who served as head of government of the United States after Donald Trump. The evidence only lists various actions taken by the United States government but does not provide a succession of heads of government.",
+        "tcs": null
+      },
+      {
+        "question": "Who was head of government of United States when Angela Merkel was Chancellor in 2014?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of the United States in 2014 or any other specific year.",
+        "tcs": null
+      },
+      {
+        "question": "When did Barack Obama serve as head of government of United States?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not specify when Barack Obama served as head of government of the United States. The timestamps are related to various actions and statements made by Obama, but do not indicate the period of his presidency.",
+        "tcs": null
+      }
+    ],
+    "tkg_verify": [
+      {
+        "question": "Who was the head of government of United States in 2012?",
+        "answer": "Insufficient evidence to answer this question.",
+        "tcs": 1.0
+      },
+      {
+        "question": "Who was the head of government of United States in 2018?",
+        "answer": "Insufficient evidence to answer this question.",
+        "tcs": 1.0
+      },
+      {
+        "question": "Who was the head of government of United States in 2022?",
+        "answer": "Insufficient evidence to answer this question.",
+        "tcs": 1.0
+      },
+      {
+        "question": "Who was the head of government of Germany in 2015?",
+        "answer": "Insufficient evidence to answer this question.",
+        "tcs": 1.0
+      },
+      {
+        "question": "Who was the head of government of France in 2014?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not specify the head of government of France in 2014. The evidence focuses on various interactions and actions of France with other countries but does not mention any individual holding the position of head of government.",
+        "tcs": 0.0
+      },
+      {
+        "question": "Who was the head of government of France in 2019?",
+        "answer": "Insufficient evidence to answer this question.",
+        "tcs": 1.0
+      },
+      {
+        "question": "Who was the head of government of Russia in 2010?",
+        "answer": "Insufficient evidence to answer this question.",
+        "tcs": 1.0
+      },
+      {
+        "question": "Who was the head of government of Russia in 2016?",
+        "answer": "Insufficient evidence to answer this question.",
+        "tcs": 1.0
+      },
+      {
+        "question": "Who was the head of government of India in 2010?",
+        "answer": "Insufficient evidence to answer this question.",
+        "tcs": 1.0
+      },
+      {
+        "question": "Who was the head of government of India in 2018?",
+        "answer": "Insufficient evidence to answer this question.",
+        "tcs": 1.0
+      },
+      {
+        "question": "Who was the head of government of China in 2008?",
+        "answer": "Insufficient evidence to answer this question.",
+        "tcs": 1.0
+      },
+      {
+        "question": "Who was the head of government of China in 2016?",
+        "answer": "Insufficient evidence to answer this question.",
+        "tcs": 1.0
+      },
+      {
+        "question": "Who was the head of government of United Kingdom in 2017?",
+        "answer": "Insufficient evidence to answer this question.",
+        "tcs": 1.0
+      },
+      {
+        "question": "Who was the head of government of United Kingdom in 2020?",
+        "answer": "Insufficient evidence to answer this question.",
+        "tcs": 1.0
+      },
+      {
+        "question": "Who was the head of government of United Nations in 2014?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of the United Nations in 2014.",
+        "tcs": 0.0
+      },
+      {
+        "question": "Who was the head of government of United Nations in 2019?",
+        "answer": "Insufficient evidence to answer this question.",
+        "tcs": 1.0
+      },
+      {
+        "question": "Who served as head of government of United States before Donald Trump?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of the United States before Donald Trump. The evidence focuses on interactions between various countries and does not provide a timeline of U.S. presidents.",
+        "tcs": 1.0
+      },
+      {
+        "question": "Who served as head of government of United States after Donald Trump?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not contain any information about the head of government of the United States after Donald Trump.",
+        "tcs": 1.0
+      },
+      {
+        "question": "Who was head of government of United States when Angela Merkel was Chancellor in 2014?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided temporal evidence does not include any information about the head of government of the United States during Angela Merkel's tenure as Chancellor in 2014.",
+        "tcs": 0.0
+      },
+      {
+        "question": "When did Barack Obama serve as head of government of United States?",
+        "answer": "Insufficient evidence to answer this question.\n\nThe provided evidence does not specify the exact time period when Barack Obama served as head of government of the United States. The evidence only shows interactions between Barack Obama and the United States government on various dates in 2014, but does not indicate the duration of his presidency.",
+        "tcs": 0.0
+      }
+    ]
+  }
+}

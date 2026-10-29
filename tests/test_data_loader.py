@@ -125,3 +125,69 @@ class TestICEWS14Loader:
 
         assert stats["num_entities"] == 4
         assert stats["num_relations"] == 3
+
+
+class TestCronQuestionsLoader:
+    """Tests for the CronQuestionsLoader class."""
+
+    @pytest.fixture
+    def sample_cronq_dir(self, tmp_path: Path) -> Path:
+        import json
+        cron_dir = tmp_path / "cronquestions"
+        cron_dir.mkdir()
+
+        # wd_id2entity_text.txt
+        id2ent = cron_dir / "wd_id2entity_text.txt"
+        id2ent.write_text("Q76\tBarack Obama\nQ30\tUnited States\n", encoding="utf-8")
+
+        # full_kg
+        kg_dir = cron_dir / "full_kg"
+        kg_dir.mkdir()
+        (kg_dir / "train.txt").write_text("Q76\thead_of_gov\tQ30\t2009\t2017\n", encoding="utf-8")
+
+        # questions
+        q_dir = cron_dir / "questions"
+        q_dir.mkdir()
+        questions = [
+            {
+                "question": "Who was head of gov of United States in 2012?",
+                "answer": ["Barack Obama"],
+                "type": "entity",
+                "entities": ["United States"],
+                "timestamps": ["2012"],
+            }
+        ]
+        (q_dir / "test.json").write_text(json.dumps(questions), encoding="utf-8")
+
+        return cron_dir
+
+    def test_load_entities(self, sample_cronq_dir: Path) -> None:
+        from src.data_loader.cronquestions_loader import CronQuestionsLoader
+        loader = CronQuestionsLoader(sample_cronq_dir)
+        entities = loader.load_entities()
+        assert entities["Q76"] == "Barack Obama"
+        assert entities["Q30"] == "United States"
+
+    def test_load_kg(self, sample_cronq_dir: Path) -> None:
+        from src.data_loader.cronquestions_loader import CronQuestionsLoader
+        loader = CronQuestionsLoader(sample_cronq_dir)
+        facts = loader.load_kg()
+        assert len(facts) == 1
+        assert facts[0]["subject"] == "Barack Obama"
+        assert facts[0]["object"] == "United States"
+
+    def test_load_questions(self, sample_cronq_dir: Path) -> None:
+        from src.data_loader.cronquestions_loader import CronQuestionsLoader
+        loader = CronQuestionsLoader(sample_cronq_dir)
+        qs = loader.load_questions("test")
+        assert len(qs) == 1
+        assert "Barack Obama" in qs[0]["answer"]
+
+    def test_get_statistics(self, sample_cronq_dir: Path) -> None:
+        from src.data_loader.cronquestions_loader import CronQuestionsLoader
+        loader = CronQuestionsLoader(sample_cronq_dir)
+        stats = loader.get_statistics()
+        assert stats["num_entities"] == 2
+        assert stats["num_kg_facts_total"] == 1
+        assert stats["num_questions_total"] == 1
+

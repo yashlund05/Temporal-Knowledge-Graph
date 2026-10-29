@@ -40,6 +40,7 @@ class TemporalRetriever:
         self,
         graph_store: Any,
         query_parser: QueryParser | None = None,
+        top_k: int = RETRIEVAL_TOP_K,
     ) -> None:
         """Initialise the temporal retriever.
 
@@ -51,9 +52,12 @@ class TemporalRetriever:
             query_parser: Optional pre-configured QueryParser.  If not
                 provided, a default parser with no known entity list is
                 created.
+            top_k: Default number of facts to retrieve.
         """
         self.graph_store = graph_store
         self.parser = query_parser or QueryParser()
+        self.top_k = top_k
+
 
     # ------------------------------------------------------------------
     # Template selection

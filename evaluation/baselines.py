@@ -316,9 +316,18 @@ class BaselineRunner:
         all_facts: list[Any] = []
         for token in tokens:
             try:
-                facts = self.graph_store.search_entities_by_name(
-                    name=token, limit=top_k
-                )
+                if hasattr(self.graph_store, "search_entities_by_name"):
+                    facts = self.graph_store.search_entities_by_name(
+                        name=token, limit=top_k
+                    )
+                elif hasattr(self.graph_store, "get_events_by_entity"):
+                    facts = self.graph_store.get_events_by_entity(
+                        entity_name=token, limit=top_k
+                    )
+                else:
+                    facts = self.graph_store.query_entity_events(
+                        entity_name=token, limit=top_k
+                    )
                 all_facts.extend(facts)
             except Exception:
                 logger.debug(
@@ -328,7 +337,7 @@ class BaselineRunner:
         seen: set[str] = set()
         unique: list[Any] = []
         for f in all_facts:
-            eid = getattr(f, "event_id", id(f))
+            eid = f.get("event_id") if isinstance(f, dict) else getattr(f, "event_id", id(f))
             if eid not in seen:
                 seen.add(eid)
                 unique.append(f)
@@ -359,18 +368,40 @@ class BaselineRunner:
         for token in tokens:
             try:
                 # 1-hop neighbours.
-                one_hop = self.graph_store.get_entity_events(
-                    entity_name=token, limit=top_k
-                )
+                if hasattr(self.graph_store, "get_entity_events"):
+                    one_hop = self.graph_store.get_entity_events(
+                        entity_name=token, limit=top_k
+                    )
+                elif hasattr(self.graph_store, "get_events_by_entity"):
+                    one_hop = self.graph_store.get_events_by_entity(
+                        entity_name=token, limit=top_k
+                    )
+                else:
+                    one_hop = self.graph_store.query_entity_events(
+                        entity_name=token, limit=top_k
+                    )
                 all_facts.extend(one_hop)
 
                 # 2-hop: for each 1-hop result, get related events.
                 for fact in one_hop[:3]:
-                    related_entity = getattr(fact, "object", None)
+                    related_entity = (
+                        fact.get("object") or fact.get("target")
+                        if isinstance(fact, dict)
+                        else getattr(fact, "object", getattr(fact, "target", None))
+                    )
                     if related_entity:
-                        two_hop = self.graph_store.get_entity_events(
-                            entity_name=related_entity, limit=top_k // 2
-                        )
+                        if hasattr(self.graph_store, "get_entity_events"):
+                            two_hop = self.graph_store.get_entity_events(
+                                entity_name=related_entity, limit=top_k // 2
+                            )
+                        elif hasattr(self.graph_store, "get_events_by_entity"):
+                            two_hop = self.graph_store.get_events_by_entity(
+                                entity_name=related_entity, limit=top_k // 2
+                            )
+                        else:
+                            two_hop = self.graph_store.query_entity_events(
+                                entity_name=related_entity, limit=top_k // 2
+                            )
                         all_facts.extend(two_hop)
             except Exception:
                 logger.debug(
@@ -381,7 +412,7 @@ class BaselineRunner:
         seen: set[str] = set()
         unique: list[Any] = []
         for f in all_facts:
-            eid = getattr(f, "event_id", id(f))
+            eid = f.get("event_id") if isinstance(f, dict) else getattr(f, "event_id", id(f))
             if eid not in seen:
                 seen.add(eid)
                 unique.append(f)
@@ -477,13 +508,20 @@ class BaselineRunner:
         dict[str, Any]
             The fact as a plain dictionary.
         """
+        if isinstance(fact, dict):
+            return {
+                "subject": fact.get("subject") or fact.get("actor", ""),
+                "predicate": fact.get("predicate", ""),
+                "object": fact.get("object") or fact.get("target", ""),
+                "timestamp": fact.get("timestamp", ""),
+            }
         try:
             from dataclasses import asdict
             return asdict(fact)
         except TypeError:
             return {
-                "subject": getattr(fact, "subject", str(fact)),
+                "subject": getattr(fact, "subject", getattr(fact, "actor", str(fact))),
                 "predicate": getattr(fact, "predicate", ""),
-                "object": getattr(fact, "object", ""),
+                "object": getattr(fact, "object", getattr(fact, "target", "")),
                 "timestamp": getattr(fact, "timestamp", ""),
             }

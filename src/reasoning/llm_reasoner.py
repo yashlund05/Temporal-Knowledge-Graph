@@ -173,6 +173,18 @@ class LLMReasoner:
             "model": self.model,
         }
 
+    def generate_grounded_answer(
+        self, question: str, facts: list[dict[str, Any]]
+    ) -> str:
+        """Generate an answer grounded in the retrieved facts."""
+        res = self.reason(question, facts)
+        return res["answer"]
+
+    def generate_answer(self, question: str) -> str:
+        """Generate an ungrounded answer (vanilla mode)."""
+        res = self.reason_ungrounded(question)
+        return res["answer"]
+
     # ------------------------------------------------------------------
     # Internal LLM call
     # ------------------------------------------------------------------

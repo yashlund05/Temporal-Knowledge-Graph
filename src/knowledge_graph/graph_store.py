@@ -228,6 +228,21 @@ class TemporalKGStore:
             result = session.run(cypher, **params)
             return [dict(record) for record in result]
 
+    def get_entity_events(self, entity_name: str, limit: int = 50) -> list[dict[str, Any]]:
+        """Alias for query_entity_events matching BaselineRunner expectations."""
+        return self.query_entity_events(entity_name, limit=limit)
+
+    def search_entities_by_name(self, name: str, limit: int = 50) -> list[dict[str, Any]]:
+        """Search events for entities whose name contains 'name'."""
+        query = """
+        MATCH (actor:Entity)-[:ACTOR]->(e:Event)-[:TARGET]->(target:Entity)
+        WHERE actor.name CONTAINS $name OR target.name CONTAINS $name
+        RETURN actor.name AS subject, e.predicate AS predicate, target.name AS object,
+               toString(e.timestamp) AS timestamp, e.event_id AS event_id
+        LIMIT $limit
+        """
+        return self.query(query, {"name": name, "limit": limit})
+
     def query_events_between_entities(
         self,
         actor: str,
@@ -311,6 +326,23 @@ class TemporalKGStore:
         LIMIT $limit
         """
 
+        with self._driver.session() as session:
+            result = session.run(cypher, **params)
+            return [dict(record) for record in result]
+
+    def query(
+        self, cypher: str, parameters: dict[str, Any] | None = None
+    ) -> list[dict[str, Any]]:
+        """Execute a parameterised Cypher query and return records as dictionaries.
+
+        Args:
+            cypher: The Cypher query string with $param placeholders.
+            parameters: Dictionary of parameter bindings.
+
+        Returns:
+            List of record dictionaries returned by the query.
+        """
+        params = parameters or {}
         with self._driver.session() as session:
             result = session.run(cypher, **params)
             return [dict(record) for record in result]

@@ -1,0 +1,27 @@
+{
+  "experiment": "ablation",
+  "timestamp": "2026-10-27T11:14:50.392408",
+  "num_questions": 10,
+  "conditions": {
+    "full_pipeline": {
+      "avg_tcs": 1.0,
+      "hallucinations_detected": 0,
+      "num_questions": 10
+    },
+    "no_verification": {
+      "avg_tcs": 1.0,
+      "hallucinations_detected": 0,
+      "num_questions": 10
+    },
+    "no_detection": {
+      "avg_tcs": 1.0,
+      "hallucinations_detected": 0,
+      "num_questions": 10
+    },
+    "no_explanation": {
+      "avg_tcs": 1.0,
+      "hallucinations_detected": 0,
+      "num_questions": 10
+    }
+  }
+}

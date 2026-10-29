@@ -81,30 +81,61 @@ def run_benchmark_evaluation(
     with open(benchmark_path, "r", encoding="utf-8") as f:
         benchmark = json.load(f)
 
+    if isinstance(benchmark, dict) and "positives" in benchmark:
+        positives = benchmark.get("positives", [])
+        negatives = benchmark.get("negatives", [])
+        benchmark = positives + negatives
+
     logger.info("Benchmark contains %d examples.", len(benchmark))
+
+    from src.verification.verification_result import TemporalClaim
 
     y_true: list[bool] = []
     y_pred: list[bool] = []
     detailed_results: list[dict[str, Any]] = []
 
     for i, example in enumerate(benchmark):
-        logger.info(
-            "Processing benchmark example %d / %d", i + 1, len(benchmark)
-        )
-        question = example.get("question", "")
-        ground_truth = bool(example.get("is_hallucinated", False))
+        if (i + 1) % 5000 == 0 or i == 0 or i == len(benchmark) - 1:
+            logger.info(
+                "Processing benchmark example %d / %d", i + 1, len(benchmark)
+            )
+
+        if "is_hallucinated" in example:
+            ground_truth = bool(example["is_hallucinated"])
+        elif "label" in example:
+            lbl = example["label"]
+            ground_truth = (lbl == "hallucinated" or lbl == 0 or lbl is False)
+        else:
+            ground_truth = False
+
         corruption_type = example.get("corruption_type", "none")
 
-        try:
-            result = pipeline.process(question)
-            predicted = result["hallucination_report"].get(
-                "is_hallucinated", False
-            )
-        except Exception:
-            logger.exception(
-                "Pipeline failed for benchmark example %d.", i
-            )
-            predicted = False
+        if "subject" in example and "predicate" in example:
+            subj = example["subject"]
+            pred = example["predicate"]
+            obj = example.get("object", "")
+            ts = example.get("timestamp", "")
+            claim = TemporalClaim(subject=subj, predicate=pred, object=obj, timestamp=ts)
+            try:
+                vr = pipeline.verifier.verify(claim)
+                report = pipeline.detector.classify_claim(vr)
+                predicted = bool(report.get("is_hallucination", False))
+            except Exception:
+                logger.exception("Verification failed for claim: %s", claim)
+                predicted = True
+            question = f"{subj} | {pred} | {obj} | {ts}"
+        else:
+            question = example.get("question", "")
+            try:
+                result = pipeline.process(question)
+                predicted = result["hallucination_report"].get(
+                    "is_hallucinated", False
+                )
+            except Exception:
+                logger.exception(
+                    "Pipeline failed for benchmark example %d.", i
+                )
+                predicted = False
 
         y_true.append(ground_truth)
         y_pred.append(predicted)
@@ -234,6 +265,8 @@ def run_cronquestions_evaluation(
             vr = r.get("verification_results", [])
             if vr:
                 tcs_values.append(temporal_consistency_score(vr))
+            elif "tcs" in r and r.get("tcs") is not None:
+                tcs_values.append(float(r["tcs"]))
 
         avg_tcs = (
             sum(tcs_values) / len(tcs_values) if tcs_values else 0.0
@@ -317,14 +350,13 @@ def run_ablation_study(
         A dictionary keyed by ablation condition, each mapping to
         computed metrics.
     """
-    from src.knowledge_graph.graph_store import TemporalKGStore
     from src.reasoning.llm_reasoner import LLMReasoner
     from src.reasoning.claim_extractor import ClaimExtractor
     from src.retrieval.query_parser import QueryParser
     from src.retrieval.temporal_retriever import TemporalRetriever
     from src.verification.temporal_verifier import TemporalVerifier
     from src.hallucination.detector import HallucinationDetector
-    from src.explanation.explanation_generator import ExplanationGenerator
+    from src.explanation.explainer import ExplanationGenerator
 
     logger.info("Starting ablation study with %d questions.", len(questions))
 
@@ -343,8 +375,7 @@ def run_ablation_study(
         max_tokens=settings.LLM_MAX_TOKENS,
     )
     claim_extractor = ClaimExtractor(
-        base_url=settings.OLLAMA_BASE_URL,
-        model=settings.OLLAMA_MODEL,
+        llm_reasoner=reasoner,
     )
     verifier = TemporalVerifier(
         graph_store=graph_store,
@@ -352,10 +383,7 @@ def run_ablation_study(
         partial_support_threshold=settings.PARTIAL_SUPPORT_THRESHOLD,
     )
     detector = HallucinationDetector()
-    explainer = ExplanationGenerator(
-        base_url=settings.OLLAMA_BASE_URL,
-        model=settings.OLLAMA_MODEL,
-    )
+    explainer = ExplanationGenerator()
 
     # Define ablation conditions.
     # Each condition is a dict of component overrides (None = disabled).
@@ -623,37 +651,37 @@ def main() -> None:
 
 
 def _load_ablation_questions(benchmark_path: Path) -> list[str]:
-    """Load a small set of questions for the ablation study.
+    """Load a small set of questions for the ablation study."""
+    # 1. Try CronQuestions
+    try:
+        from src.data_loader.cronquestions_loader import CronQuestionsLoader
+        loader = CronQuestionsLoader(data_dir=settings.CRONQUESTIONS_DIR)
+        qs = loader.load_questions("test")
+        if qs:
+            import random
+            rng = random.Random(settings.RANDOM_SEED)
+            sample = rng.sample(qs, min(10, len(qs)))
+            return [q["question"] for q in sample]
+    except Exception as e:
+        logger.debug("CronQuestions not used for ablation questions: %s", e)
 
-    Extracts questions from the benchmark file, or generates simple
-    test questions if no benchmark is available.
-
-    Parameters
-    ----------
-    benchmark_path :
-        Path to the benchmark JSON file.
-
-    Returns
-    -------
-    list[str]
-        A list of question strings for the ablation study.
-    """
+    # 2. Try Benchmark
     if benchmark_path.exists():
         with open(benchmark_path, "r", encoding="utf-8") as f:
             benchmark = json.load(f)
-        # Take a small sample for ablation (up to 50 questions).
+        if isinstance(benchmark, dict) and "positives" in benchmark:
+            benchmark = benchmark["positives"]
         import random
         rng = random.Random(settings.RANDOM_SEED)
-        sample = rng.sample(
-            benchmark, min(50, len(benchmark))
-        )
-        return [ex.get("question", "") for ex in sample if ex.get("question")]
+        sample = rng.sample(benchmark, min(10, len(benchmark)))
+        questions = []
+        for ex in sample:
+            if ex.get("question"):
+                questions.append(ex["question"])
+            elif "subject" in ex:
+                questions.append(f"Did {ex['subject']} {ex.get('predicate')} {ex.get('object')} in {ex.get('timestamp')}?")
+        return questions
 
-    logger.warning(
-        "Benchmark file not found at %s. "
-        "Using empty question list for ablation.",
-        benchmark_path,
-    )
     return []
 
 

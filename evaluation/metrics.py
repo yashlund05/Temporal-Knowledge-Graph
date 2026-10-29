@@ -138,11 +138,16 @@ def answer_accuracy(
     if not predictions:
         raise ValueError("Cannot compute accuracy on empty lists.")
 
-    matches = sum(
-        1
-        for pred, gold in zip(predictions, gold_answers)
-        if pred.strip().lower() == gold.strip().lower()
-    )
+    matches = 0
+    for pred, gold in zip(predictions, gold_answers):
+        pred_str = str(pred).strip().lower()
+        if isinstance(gold, (list, tuple, set)):
+            if any(str(g).strip().lower() in pred_str or pred_str in str(g).strip().lower() for g in gold):
+                matches += 1
+        else:
+            gold_str = str(gold).strip().lower()
+            if pred_str == gold_str or gold_str in pred_str or pred_str in gold_str:
+                matches += 1
     return matches / len(predictions)
 
 

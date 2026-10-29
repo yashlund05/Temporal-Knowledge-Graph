@@ -124,6 +124,36 @@ def step2_build_graph(loader, facts):
     loaded = store.bulk_load_facts(batch)
     logger.info("Loaded %d events into graph", loaded)
 
+    # Also load CronQuestions facts if available
+    try:
+        from src.data_loader.cronquestions_loader import CronQuestionsLoader
+        cron_loader = CronQuestionsLoader(data_dir=CRONQUESTIONS_DIR)
+        entity_map = cron_loader.load_entities()
+        qid_to_store_id = {}
+        for qid, name in entity_map.items():
+            eid = store.get_entity_id(name)
+            if not eid:
+                eid = qid
+                store.add_entity(eid, name)
+            qid_to_store_id[qid] = eid
+
+        cron_facts = cron_loader.load_kg()
+        for f in cron_facts:
+            s_id = qid_to_store_id.get(f["subject_id"], f["subject_id"])
+            o_id = qid_to_store_id.get(f["object_id"], f["object_id"])
+            store.add_event(
+                subject_id=s_id,
+                predicate=f["relation"],
+                object_id=o_id,
+                timestamp=f["start_time"] or "2014-01-01",
+                source="cronquestions",
+                start_time=f["start_time"],
+                end_time=f["end_time"],
+            )
+        logger.info("Incorporated %d CronQuestions facts into graph", len(cron_facts))
+    except Exception as exc:
+        logger.debug("CronQuestions data not merged into graph: %s", exc)
+
     # Save to disk for reuse
     PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
     graph_path = PROCESSED_DATA_DIR / "knowledge_graph.json"

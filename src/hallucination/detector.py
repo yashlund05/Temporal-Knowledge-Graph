@@ -112,12 +112,18 @@ class HallucinationDetector:
 
         for result in verification_results:
             claim_classification = self.classify_claim(result)
+            claim = result.claim
+            subj = claim.get("subject", "") if isinstance(claim, dict) else getattr(claim, "subject", "")
+            pred = claim.get("predicate", "") if isinstance(claim, dict) else getattr(claim, "predicate", "")
+            obj = claim.get("object", "") if isinstance(claim, dict) else getattr(claim, "object", "")
+            ts = claim.get("timestamp", "") if isinstance(claim, dict) else getattr(claim, "timestamp", "")
+
             per_claim.append(
                 {
-                    "claim_subject": result.claim.subject,
-                    "claim_predicate": result.claim.predicate,
-                    "claim_object": result.claim.object,
-                    "claim_timestamp": result.claim.timestamp,
+                    "claim_subject": subj,
+                    "claim_predicate": pred,
+                    "claim_object": obj,
+                    "claim_timestamp": ts,
                     "status": result.status.value,
                     **claim_classification,
                 }
@@ -141,6 +147,7 @@ class HallucinationDetector:
 
         return {
             "classification": classification,
+            "is_hallucinated": has_hallucination,
             "hallucinated_claims": hallucinated_claims,
             "tcs": 1.0 - tcs,  # TCS = 1 - hallucination_score
             "per_claim": per_claim,

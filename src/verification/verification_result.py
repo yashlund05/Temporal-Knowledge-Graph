@@ -62,6 +62,7 @@ class TemporalClaim:
     object: str
     timestamp: str
     source_sentence: str = ""
+    extraction_method: str = "rule_based"
 
 
 @dataclass
